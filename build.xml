@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE project>
 
-<project name="waveform-support-service" basedir="." default="deployWaveformDataService">
+<project name="waveform-support-service" basedir="." default="deployWaveformSupportService">
 	
 	<property name="liferay" value="/opt/liferay" />
 	<property name="liferay-sdk" value="${liferay}/liferay-plugins-sdk-6.1.1"/>
@@ -70,15 +70,15 @@
 
 	
 	
-	<target name="compileWaveformDataService">
+	<target name="compileWaveformSupportService">
 		<antcall target="compileService">
-			<param name="projectName" value="waveformDataService"/>
+			<param name="projectName" value="waveformSupportService"/>
 		</antcall>
 	</target>
 	
-	<target name="deployWaveformDataService" depends="compileWaveformDataService">
+	<target name="deployWaveformSupportService" depends="compileWaveformSupportService">
 		<antcall target="deployService">
-			<param name="projectName" value="waveformDataService"/>
+			<param name="projectName" value="waveformSupportService"/>
 		</antcall>
 	</target>
 		
