@@ -14,6 +14,8 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.log4j.Logger;
 
+import edu.jhu.cvrg.waveform.service.ServiceUtils;
+
 public class DataServiceUtils {
 
 	String errorMessage="";
@@ -22,13 +24,15 @@ public class DataServiceUtils {
 	
 	/** prefix parameter for OMNamespace.createOMNamespace() - the prefix<BR>e.g. physionetAnalysisService **/
 	private String sOMNameSpacePrefix =  "physionetAnalysisService";  
+	private String[] inputFileNames = null;
+	private String fileName="";
+	private long fileSize=0;
+	private int offsetMilliSeconds=0, durationMilliSeconds=0, graphWidthPixels=0, signalCount= 0, samplesPerSignal = 0;
+	private double sampleFrequency = 0.0;
+	
 	public Map<String, Object> mapCommandParam = null;
-	public String[] asInputFileNames = null;
 	public String sJobID="";
-	public String mySqlURL="", fileName="";
 	public String tempFile ="";
-	public long fileSize=0;
-	public int offsetMilliSeconds=0, durationMilliSeconds=0, graphWidthPixels=0;
 	public Long userId;
 	public String[] saLeadCSV = null; // array of comma separated ECG values, one string per lead.
 	public VisualizationData visData=null;
@@ -36,32 +40,39 @@ public class DataServiceUtils {
 	
 	private static Logger log = Logger.getLogger(DataServiceUtils.class);
 	
-	public String parseInputParametersType2(OMElement param0){
+	public Map<String, OMElement> parseInputParametersType2(OMElement param0){
+		// parse the input parameter's OMElement XML into a Map.
+	    Map<String, OMElement> mapWServiceParam = null;
+	    
 		try {
-			// parse the input parameter's OMElement XML into a Map.
-			Map<String, Object> mapWServiceParam = buildParamMap(param0);
+			mapWServiceParam = ServiceUtils.extractParams(param0);
 			// Assign specific input parameters to local variables.
 			
-			int iFileCount      = Integer.parseInt( (String) mapWServiceParam.get("fileCount") ); 
-			int iParameterCount = Integer.parseInt( (String) mapWServiceParam.get("parameterCount")); 
+			int iFileCount      = Integer.parseInt( (String) mapWServiceParam.get("fileCount").getText() ); 
+			int iParameterCount = Integer.parseInt( (String) mapWServiceParam.get("parameterCount").getText()); 
 			/********************************************/
-			bTestPattern		= Boolean.parseBoolean((String) mapWServiceParam.get("testPattern"));
+			bTestPattern		= Boolean.parseBoolean((String) mapWServiceParam.get("testPattern").getText());
 			if(mapWServiceParam.get("fileSize") != null && bTestPattern){
-				fileSize			= Long.parseLong((String) mapWServiceParam.get("fileSize"));
+				fileSize			= Long.parseLong((String) mapWServiceParam.get("fileSize").getText());
 			}
 			
-			offsetMilliSeconds	= Integer.parseInt((String) mapWServiceParam.get("offsetMilliSeconds"));
-			durationMilliSeconds= Integer.parseInt((String) mapWServiceParam.get("durationMilliSeconds"));
-			graphWidthPixels	= Integer.parseInt((String) mapWServiceParam.get("graphWidthPixels"));
-			userId				= Long.valueOf((String) mapWServiceParam.get("userId"));
+			offsetMilliSeconds	= Integer.parseInt((String) mapWServiceParam.get("offsetMilliSeconds").getText());
+			durationMilliSeconds= Integer.parseInt((String) mapWServiceParam.get("durationMilliSeconds").getText());
+			graphWidthPixels	= Integer.parseInt((String) mapWServiceParam.get("graphWidthPixels").getText());
+			userId				= Long.valueOf((String) mapWServiceParam.get("userId").getText());
+			
+			sampleFrequency		= Double.valueOf((String) mapWServiceParam.get("sampleFrequency").getText());
+			signalCount			= Integer.valueOf((String) mapWServiceParam.get("signalCount").getText());
+			samplesPerSignal	= Integer.valueOf((String) mapWServiceParam.get("samplesPerSignal").getText());
+			
 			
 			debugPrintln("Extracting fileNameList, should be " + iFileCount + " files ...;");
 
 			if(!bTestPattern & (iFileCount>0)){
 				OMElement filehandlelist = (OMElement) mapWServiceParam.get("fileNameList");
 				debugPrintln("Building Input Filename array...;");
-				asInputFileNames = buildParamArray(filehandlelist);
-				debugPrintln("Finished Extracting fileNameList, founnd " + asInputFileNames.length + " files ...;");
+				inputFileNames = buildParamArray(filehandlelist);
+				debugPrintln("Finished Extracting fileNameList, founnd " + inputFileNames.length + " files ...;");
 				
 			}
 			if(iParameterCount>0){
@@ -73,12 +84,15 @@ public class DataServiceUtils {
 				debugPrintln("There are no parameters, so Command Parameter map was not built.");
 			}
 			
+			
+			
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			errorMessage = "parseInputParametersType2 failed.";
 		}
 		
-		return errorMessage;
+		return mapWServiceParam;
 	}
 	
 
@@ -410,6 +424,60 @@ public class DataServiceUtils {
 	
 	public void debugPrintln(String text){
 		log.debug("++ DataServiceUtils + " + text);
+	}
+
+
+
+	public int getOffsetMilliSeconds() {
+		return offsetMilliSeconds;
+	}
+
+
+
+	public int getDurationMilliSeconds() {
+		return durationMilliSeconds;
+	}
+
+
+
+	public int getGraphWidthPixels() {
+		return graphWidthPixels;
+	}
+
+
+
+	public int getSignalCount() {
+		return signalCount;
+	}
+
+
+
+	public int getSamplesPerSignal() {
+		return samplesPerSignal;
+	}
+
+
+
+	public double getSampleFrequency() {
+		return sampleFrequency;
+	}
+
+
+
+	public String[] getInputFileNames() {
+		return inputFileNames;
+	}
+
+
+
+	public String getFileName() {
+		return fileName;
+	}
+
+
+
+	public long getFileSize() {
+		return fileSize;
 	}
 
 }

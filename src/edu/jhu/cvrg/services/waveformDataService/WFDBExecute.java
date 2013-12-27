@@ -48,48 +48,40 @@ public class WFDBExecute {
 		OMFactory factory = OMAbstractFactory.getOMFactory();
 		OMNamespace dsNs = factory.createOMNamespace("http://www.cvrgrid.org/nodeDataService/", "dataStaging");
 
-		String fileName="";
-		
-		long fileSize=0;
-		int offsetMilliSeconds=0, durationMilliSeconds=0, graphWidthPixels=0;
 		String[] saLeadCSV = null; // array of comma separated ECG values, one string per lead.
 		VisualizationData visData=null;
 		try{
 			// Parse parameters
 			debugPrintln("- parsing the web service's parameters without regard to order.");
 			// Assign specific input parameters to local variables.
-			fileName			= util.fileName;
-			fileSize			= util.fileSize; 
-			offsetMilliSeconds	= util.offsetMilliSeconds;
-			durationMilliSeconds= util.durationMilliSeconds;
-			graphWidthPixels	= util.graphWidthPixels;
-			bTestPattern		= util.bTestPattern;
+			
+			bTestPattern = util.bTestPattern;
 
 			//**************************************************
-			debugPrintln("** offsetMilliSeconds: " + offsetMilliSeconds + " durationMilliSeconds: " + durationMilliSeconds);
+			debugPrintln("** offsetMilliSeconds: " + util.getOffsetMilliSeconds() + " durationMilliSeconds: " + util.getDurationMilliSeconds());
 
 			String sIgnoreMess="";
 			debugPrintln("[=====================================================================]");
 			debugPrintln(" bTestPattern: " + bTestPattern);
-			debugPrintln(" fileSize: " + fileSize);
-			debugPrintln(" offsetMilliSeconds: " + offsetMilliSeconds);
-			debugPrintln(" durationMilliSeconds: " + durationMilliSeconds);
-			debugPrintln(" graphWidthPixels: " + graphWidthPixels);
+			debugPrintln(" fileSize: " + util.getFileSize());
+			debugPrintln(" offsetMilliSeconds: " + util.getOffsetMilliSeconds());
+			debugPrintln(" durationMilliSeconds: " + util.getDurationMilliSeconds());
+			debugPrintln(" graphWidthPixels: " + util.getGraphWidthPixels());
 
 			if(bTestPattern) {
 				sIgnoreMess = "Ignored: ";
 			}
 			
-			debugPrintln(sIgnoreMess + "fileName: " + fileName);
+			debugPrintln(sIgnoreMess + "fileName: " + util.getFileName());
 			debugPrintln("[=====================================================================]");
 
 
 			debugPrintln("Creating Visualization Data bean.");
 			if(bTestPattern){
-				visData = fetchSubjectVisualizationTestPattern(fileSize, offsetMilliSeconds, durationMilliSeconds, graphWidthPixels);
+				visData = fetchSubjectVisualizationTestPattern(util.getFileSize(), util.getOffsetMilliSeconds(), util.getDurationMilliSeconds(), util.getGraphWidthPixels());
 				success=true;
 			}else{
-				visData = fetchWFDBdataSegment(sWorkingFiles, offsetMilliSeconds, durationMilliSeconds, graphWidthPixels);
+				visData = fetchWFDBdataSegment(sWorkingFiles, util.getOffsetMilliSeconds(), util.getDurationMilliSeconds(), util.getGraphWidthPixels());
 			}
 			
 			iLeadCount = visData.getECGDataLeads();
@@ -285,22 +277,22 @@ public class WFDBExecute {
 		int requestedMaxPoints = 0,availableSamples = 0,availablePoints = 0;
 		int maxPoints = 0; // maximum data points that can be returned.
 		
-		WFDB_wrapper wfdb = new WFDB_wrapper();
+		WFDB_wrapper wfdb = null; 
 		
 		float fRateMsec = 0;
 		try {
 			String tempFile = util.findHeaderPathName(sWorkingFiles);
 			String headerName = ServiceUtils.extractName(tempFile);
 			String recordName = headerName.substring(0, headerName.lastIndexOf("."));
-			wfdb.setFilePath(ServiceUtils.extractPath(tempFile));
+			wfdb = new WFDB_wrapper(ServiceUtils.extractPath(tempFile));
 			
-			wfdb.WFDBtoArray(recordName, 12);
+			channels = util.getSignalCount();
+			counts = util.getSamplesPerSignal(); // s/b the same as iSamplesPerSignal
+			samplingRate = (int) util.getSampleFrequency(); 
 			
-			channels=wfdb.signalCount;
-			counts = wfdb.samplesPerSignal; // s/b the same as iSamplesPerSignal
-			samplingRate = (int) wfdb.sampleFrequency; 
+			wfdb.WFDBtoArray(recordName, channels, counts, channels);
 			
-			fRateMsec = (float)(wfdb.sampleFrequency/1000.0);
+			fRateMsec = (float)(util.getSampleFrequency()/1000.0);
 			fmilliSecondPerSample =  (float) (1000.0/((float)(samplingRate)));
 			
 			if (offsetMilliSeconds<0){
@@ -340,7 +332,7 @@ public class WFDBExecute {
 			visualizationData.setECGDataLeads(channels);
 			visualizationData.setOffset(segOffset);
 			visualizationData.setSkippedSamples(skippedSamples);
-			int msDuration = (int) ((counts*1000)/wfdb.sampleFrequency);
+			int msDuration = (int) ((counts*1000)/samplingRate);
 			visualizationData.setMsDuration(msDuration);
 	
 			debugPrintln("+ samplingRate: " + samplingRate); 
@@ -378,7 +370,7 @@ public class WFDBExecute {
 				if(sample==iSampleToCopy){ // add this sample the output data
 					segmentData[outSample][0] = fmilliSecondPerSample*sample; // time stamp in milliseconds
 					for(int ch = 0; ch < channels; ch++) {
-						segmentData[outSample][ch+1] = wfdb.data[ch][sample];
+						segmentData[outSample][ch+1] = wfdb.getData()[ch][sample];
 					}
 					iSampleToCopy = iSampleToCopy + 1 + skippedSamples;
 					outSample++;

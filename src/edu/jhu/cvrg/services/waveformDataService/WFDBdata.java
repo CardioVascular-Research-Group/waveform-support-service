@@ -19,10 +19,6 @@ import edu.jhu.cvrg.waveform.service.ServiceUtils;
  */
 public class WFDBdata {
 	
-	private DataServiceUtils util = new DataServiceUtils();
-	private WFDBExecute execute = new WFDBExecute(util);
-	private String errorMessage = "";
-	
 	private static Logger log = Logger.getLogger(WFDBdata.class);
 	
 	/** For testing of service.
@@ -42,7 +38,7 @@ public class WFDBdata {
 	 * @throws Exception 
 	 */
 	public org.apache.axiom.om.OMElement getAlgorithmDetails(org.apache.axiom.om.OMElement param0) throws Exception {
-		errorMessage = "";
+		String errorMessage = "";
 		System.out.println("Physionet.getAlgorithmDetails faked version() started.");
 		
 		String xml="";
@@ -50,6 +46,7 @@ public class WFDBdata {
 		xstream.alias("AlgorithmServiceData", AlgorithmServiceData.class);
 
 		try {
+			DataServiceUtils util = new DataServiceUtils();
 			// parse the input parameter's OMElement XML into a Map.
 			Map<String, Object> paramMap = util.buildParamMap(param0);
 			// Assign specific input parameters to local variables.
@@ -97,18 +94,20 @@ public class WFDBdata {
 	 * @throws Exception 
 	 */
 	public org.apache.axiom.om.OMElement fetchWFDBdataSegmentType2(org.apache.axiom.om.OMElement param0) throws Exception {
-		errorMessage = "";
+		
 		debugPrintln("fetchWFDBdataSegmentType2() started.");
 		String[] asWorkingFileHandles = null;
 		
-		errorMessage = util.parseInputParametersType2(param0);
+		DataServiceUtils util = new DataServiceUtils();
+		Map<String, OMElement> paramsMap = util.parseInputParametersType2(param0);
 
 		//************* Calls the wrapper of the analysis algorithm. *********************
 		if(!util.bTestPattern){
-			asWorkingFileHandles = copyDataFilesToAnalysis(param0);
+			asWorkingFileHandles = copyDataFilesToAnalysis(paramsMap, util);
 		}
 		
-		OMElement omeWFDBdataReturn = execute.collectWFDBdataSegment(asWorkingFileHandles); //util.asInputFileNames, util.mapCommandParam
+		WFDBExecute execute = new WFDBExecute(util);
+		OMElement omeWFDBdataReturn = execute.collectWFDBdataSegment(asWorkingFileHandles); 
 
 		return omeWFDBdataReturn;	
 	}
@@ -120,20 +119,18 @@ public class WFDBdata {
 	 * @return - The list of transfered files using the local path relative to the localTranferRoot (ftp root).
 	 * @throws Exception
 	 */
-	private String[] copyDataFilesToAnalysis(OMElement param0) throws Exception {
+	private String[] copyDataFilesToAnalysis(Map<String, OMElement> params, DataServiceUtils util) throws Exception {
 		debugPrintln("Running copyDataFilesToAnalysis()");
 		
 		String[] tmpFileNames = null;
 		
-		Map<String, OMElement> params = ServiceUtils.extractParams(param0);
-		
-		if(util.asInputFileNames != null){
+		if(util.getInputFileNames() != null){
 			
-			tmpFileNames = new String[util.asInputFileNames.length];
+			tmpFileNames = new String[util.getInputFileNames().length];
 			
 			String inputPath = ServiceUtils.SERVER_TEMP_VISUALIZE_FOLDER + File.separator + util.userId;
-			for (int i = 0; i < util.asInputFileNames.length; i++) {
-				String fileName = util.asInputFileNames[i];
+			for (int i = 0; i < util.getInputFileNames().length; i++) {
+				String fileName = util.getInputFileNames()[i];
 			
 				tmpFileNames[i] = inputPath+File.separator+fileName;
 				
