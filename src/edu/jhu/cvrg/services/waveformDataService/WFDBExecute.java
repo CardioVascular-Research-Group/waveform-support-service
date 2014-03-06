@@ -270,8 +270,8 @@ public class WFDBExecute {
 	private VisualizationData fetchWFDBdataSegment(String[] sWorkingFiles, int offsetMilliSeconds, int durationMilliSeconds, int graphWidthPixels) {
 		
 		VisualizationData visualizationData = new VisualizationData();
-		
-		int samplesPerPixel = 0, skippedSamples = 0, segDurationInSamples = 0;
+		double samplesPerPixel = 0, skippedSamples = 0;
+		int  skippedSamplesInt = 0, segDurationInSamples = 0;
 		float fmilliSecondPerSample=0;
 		int samplingRate = 0, segOffset = 0, channels = 0, counts = 0;
 		int requestedMaxPoints = 0,availableSamples = 0,availablePoints = 0;
@@ -302,15 +302,16 @@ public class WFDBExecute {
 	
 			segDurationInSamples = (int) (fRateMsec*durationMilliSeconds);
 			if(segDurationInSamples>graphWidthPixels){
-				samplesPerPixel=segDurationInSamples/graphWidthPixels;
+				samplesPerPixel=(double)segDurationInSamples/graphWidthPixels;
 				requestedMaxPoints = graphWidthPixels;
 			}else{
 				samplesPerPixel=1;
 				requestedMaxPoints = segDurationInSamples;
 			}
-			skippedSamples = samplesPerPixel-1; // number of samples to skip after each one returned. To adjust for graph resolution.
+			skippedSamples = samplesPerPixel-1;
+		    skippedSamplesInt = (int) skippedSamples; // number of samples to skip after each one returned. To adjust for graph resolution.
 			availableSamples = counts - segOffset; // total number of remaining samples from this offset.
-			availablePoints = availableSamples/samplesPerPixel; // total number of graphable points from this offset.
+			availablePoints = availableSamples/(int)samplesPerPixel; // total number of graphable points from this offset.
 			// ensure that the copying loop doesn't try to go past the end of the data file.
 			if(availablePoints > requestedMaxPoints) {
 				maxPoints = requestedMaxPoints;
@@ -331,7 +332,7 @@ public class WFDBExecute {
 			visualizationData.setECGDataLength(maxPoints);
 			visualizationData.setECGDataLeads(channels);
 			visualizationData.setOffset(segOffset);
-			visualizationData.setSkippedSamples(skippedSamples);
+			visualizationData.setSkippedSamples((int)skippedSamples);
 			int msDuration = (int) ((counts*1000)/samplingRate);
 			visualizationData.setMsDuration(msDuration);
 	
@@ -366,14 +367,25 @@ public class WFDBExecute {
 			double[][] segmentData = new double[maxPoints][channels+1];
 			int iSampleToCopy =  segOffset; // index of the first sample to return data for, index is in samples not bytes.
 			int outSample=0;
+			double skipDecimals = skippedSamples-skippedSamplesInt;
+			double skipDecimalsCumulative = 0;
+			
 			for (int sample =  0; sample < counts; sample++){
 				if(sample==iSampleToCopy){ // add this sample the output data
 					segmentData[outSample][0] = fmilliSecondPerSample*sample; // time stamp in milliseconds
 					for(int ch = 0; ch < channels; ch++) {
 						segmentData[outSample][ch+1] = wfdb.getData()[ch][sample];
 					}
-					iSampleToCopy = iSampleToCopy + 1 + skippedSamples;
 					outSample++;
+					
+					skipDecimalsCumulative +=skipDecimals;
+					
+					iSampleToCopy = iSampleToCopy + 1 + skippedSamplesInt + (int)skipDecimalsCumulative;
+					
+					if(((int)skipDecimalsCumulative) > 0){
+						skipDecimalsCumulative = skipDecimalsCumulative-(int)skipDecimalsCumulative;
+					}
+					
 					if(outSample==maxPoints) break;
 				}
 			}
