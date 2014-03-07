@@ -81,7 +81,7 @@ public class WFDBExecute {
 				visData = fetchSubjectVisualizationTestPattern(util.getFileSize(), util.getOffsetMilliSeconds(), util.getDurationMilliSeconds(), util.getGraphWidthPixels());
 				success=true;
 			}else{
-				visData = fetchWFDBdataSegment(sWorkingFiles, util.getOffsetMilliSeconds(), util.getDurationMilliSeconds(), util.getGraphWidthPixels());
+				visData = fetchWFDBdataSegment(sWorkingFiles, util.getOffsetMilliSeconds(), util.getDurationMilliSeconds(), util.getGraphWidthPixels(), util.isSkipSamples());
 			}
 			
 			iLeadCount = visData.getECGDataLeads();
@@ -267,7 +267,7 @@ public class WFDBExecute {
 	 * 	 
 	 * @see org.cvrgrid.widgets.node.client.BrokerService#fetchSubjectVisualization(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, long, int, int)
 	 */
-	private VisualizationData fetchWFDBdataSegment(String[] sWorkingFiles, int offsetMilliSeconds, int durationMilliSeconds, int graphWidthPixels) {
+	private VisualizationData fetchWFDBdataSegment(String[] sWorkingFiles, int offsetMilliSeconds, int durationMilliSeconds, int graphWidthPixels, boolean skipSamples) {
 		
 		VisualizationData visualizationData = new VisualizationData();
 		double samplesPerPixel = 0, skippedSamples = 0;
@@ -301,7 +301,7 @@ public class WFDBExecute {
 			segOffset = (int) (offsetMilliSeconds*fRateMsec);  // graph start position in number of samples from the start of record
 	
 			segDurationInSamples = (int) (fRateMsec*durationMilliSeconds);
-			if(segDurationInSamples>graphWidthPixels){
+			if(segDurationInSamples>graphWidthPixels && skipSamples){
 				samplesPerPixel=(double)segDurationInSamples/graphWidthPixels;
 				requestedMaxPoints = graphWidthPixels;
 			}else{

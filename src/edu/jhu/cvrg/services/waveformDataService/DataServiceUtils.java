@@ -29,6 +29,7 @@ public class DataServiceUtils {
 	private long fileSize=0;
 	private int offsetMilliSeconds=0, durationMilliSeconds=0, graphWidthPixels=0, signalCount= 0, samplesPerSignal = 0;
 	private double sampleFrequency = 0.0;
+	private boolean skipSamples = false;
 	
 	public Map<String, Object> mapCommandParam = null;
 	public String sJobID="";
@@ -37,6 +38,7 @@ public class DataServiceUtils {
 	public String[] saLeadCSV = null; // array of comma separated ECG values, one string per lead.
 	public VisualizationData visData=null;
 	public boolean bTestPattern = false;
+	
 	
 	private static Logger log = Logger.getLogger(DataServiceUtils.class);
 	
@@ -65,6 +67,9 @@ public class DataServiceUtils {
 			signalCount			= Integer.valueOf((String) mapWServiceParam.get("signalCount").getText());
 			samplesPerSignal	= Integer.valueOf((String) mapWServiceParam.get("samplesPerSignal").getText());
 			
+			if(mapWServiceParam.get("noSkip")!=null){
+				skipSamples	= Boolean.valueOf((String) mapWServiceParam.get("noSkip").getText());
+			}
 			
 			debugPrintln("Extracting fileNameList, should be " + iFileCount + " files ...;");
 
@@ -478,6 +483,18 @@ public class DataServiceUtils {
 
 	public long getFileSize() {
 		return fileSize;
+	}
+
+
+
+	public boolean isSkipSamples() {
+		return skipSamples;
+	}
+
+
+
+	public void setSkipSamples(boolean noSkip) {
+		this.skipSamples = noSkip;
 	}
 
 }
