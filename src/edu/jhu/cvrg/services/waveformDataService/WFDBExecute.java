@@ -400,7 +400,7 @@ public class WFDBExecute {
 	}
 	
 	private void debugPrintln(String text){
-		log.debug("-+ wfdbExecute + " + text);
+		log.info("-+ wfdbExecute + " + text);
 	}
 
 }

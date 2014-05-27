@@ -142,7 +142,7 @@ public class WFDBdata {
 	}
 
 	private void debugPrintln(String text){
-		log.debug("+ waveform-support-Service + " + text);
+		log.info("+ waveform-support-Service + " + text);
 	}
 	
 }

@@ -7,5 +7,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/axis-lib"/>
+	<classpathentry kind="lib" path="/opt/liferay/projects-dependencies/waveform-support-service-dependencies/log4j-1.2.15.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

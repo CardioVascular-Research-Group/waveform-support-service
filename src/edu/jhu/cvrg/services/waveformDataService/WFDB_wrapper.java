@@ -34,7 +34,7 @@ public class WFDB_wrapper {
 		
 	    try{ // read data into the local array, count samplesPerSignal
 	    	
-	    	log.debug("samplesPerSignal: " + samplesPerSignal + "  signalCount: " + signalCount);
+	    	log.info("samplesPerSignal: " + samplesPerSignal + "  signalCount: " + signalCount);
 	    	data = new int[signalCount][samplesPerSignal];
 	    	
 			String command = "rdsamp -r " + filePath + recordNm + " -c -p -v -H";
@@ -71,16 +71,16 @@ public class WFDB_wrapper {
 		    	lineNum++;
 		    }		    
 		    
-		    if(log.isDebugEnabled()){
-		    	log.debug("First 10 rows of data read:");
+		    if(log.isInfoEnabled()){
+		    	log.info("First 10 rows of data read:");
 			    for (int row = 0; row < 10; row++) {  // try reading the first 10 rows. 
 			        for (int sig = 0; sig < signalCount; sig++) {
-			        	log.debug(data[sig][row] + " ");
+			        	log.info(data[sig][row] + " ");
 			        }
 				}
 		    }
 		    // read any errors from the attempted command
-		    log.debug("Here is the standard error of the command (if any):\n");
+		    log.info("Here is the standard error of the command (if any):\n");
 	        while ((error = stdError.readLine()) != null) {
 	        	log.error(error);
 	        }
