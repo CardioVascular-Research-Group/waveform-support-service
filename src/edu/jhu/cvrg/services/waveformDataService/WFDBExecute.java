@@ -48,7 +48,7 @@ public class WFDBExecute {
 		OMFactory factory = OMAbstractFactory.getOMFactory();
 		OMNamespace dsNs = factory.createOMNamespace("http://www.cvrgrid.org/nodeDataService/", "dataStaging");
 
-		String[] saLeadCSV = null; // array of comma separated ECG values, one string per lead.
+		StringBuilder[] saLeadCSV = null; // array of comma separated ECG values, one string per lead.
 		VisualizationData visData=null;
 		try{
 			// Parse parameters
@@ -88,27 +88,27 @@ public class WFDBExecute {
 			iDataArrayLength = visData.getECGData().length; // rows/leads
 			iDataArrayWidth = visData.getECGData()[0].length; // columns/samples
 			debugPrintln(" iDataArrayLength: " + iDataArrayWidth);
-			saLeadCSV = new String[iLeadCount+1];
+			saLeadCSV = new StringBuilder[iLeadCount+1];
 			debugPrintln(" iLeadCount: " + iLeadCount);
 			
 			//initialize all to an empty string.
 			for(int lead=0;lead < iDataArrayWidth;lead++){
 				debugPrintln("Initializing CSV for lead: " + lead + " of " + iLeadCount);
-				saLeadCSV[lead] = ""; 
+				saLeadCSV[lead] = new StringBuilder(); 
 			}
 
 			//build a comma delimited list for each column
 			for(int row=0;row < iDataArrayLength;row++){
 				if(row<10) debugPrintln("Building a CSV list for row: " + row + " of " + visData.getECGDataLength());
 				for(int lead=0;lead < iDataArrayWidth;lead++){
-					saLeadCSV[lead] += visData.getECGData()[row][lead] + ",";
+					saLeadCSV[lead].append(visData.getECGData()[row][lead]).append(',');
 				}
 			}						
 
 			// trim trailing comma 
 			for(int lead=0;lead < iDataArrayWidth;lead++){
 				debugPrintln("Finishing CSV for lead: " + lead + " of " + iLeadCount);
-				saLeadCSV[lead] = saLeadCSV[lead].substring(0, saLeadCSV[lead].length()-1);
+				saLeadCSV[lead].deleteCharAt(saLeadCSV[lead].length()-1);
 			}
 		} catch (Exception e) {
 			System.err.println("collectVisualizationData failed while loading data from ecg file.");
@@ -135,7 +135,7 @@ public class WFDBExecute {
 			util.addOMEChild("SkippedSamples", 	String.valueOf(visData.getSkippedSamples()),collectVisualizationData,factory,dsNs);
 			util.addOMEChild("SegmentDuration", 		String.valueOf(visData.msDuration),			collectVisualizationData,factory,dsNs);
 			for(int lead=0;lead < iDataArrayWidth;lead++){
-				util.addOMEChild("lead_"+lead, 	saLeadCSV[lead],							collectVisualizationData,factory,dsNs);
+				util.addOMEChild("lead_"+lead, 	saLeadCSV[lead].toString(),							collectVisualizationData,factory,dsNs);
 			}	
 		}else{
 			util.addOMEChild("Status", 			"fail",										collectVisualizationData,factory,dsNs);			
