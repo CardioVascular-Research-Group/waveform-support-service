@@ -290,8 +290,6 @@ public class WFDBExecute {
 			counts = util.getSamplesPerSignal(); // s/b the same as iSamplesPerSignal
 			samplingRate = (int) util.getSampleFrequency(); 
 			
-			wfdb.WFDBtoArray(recordName, channels, counts, channels);
-			
 			fRateMsec = (float)(util.getSampleFrequency()/1000.0);
 			fmilliSecondPerSample =  (float) (1000.0/((float)(samplingRate)));
 			
@@ -320,10 +318,14 @@ public class WFDBExecute {
 					// move the offset back so the requested amount of samples can be returned.
 					segOffset = counts - segDurationInSamples;
 					maxPoints = requestedMaxPoints;
+					offsetMilliSeconds = (int)(segOffset * fmilliSecondPerSample);
 				}else{	// Requested duration is longer than the file contains.
 					maxPoints = availablePoints;
 				}
 			}
+			
+			wfdb.WFDBtoArray(recordName, channels, maxPoints, channels, offsetMilliSeconds, durationMilliSeconds);
+			
 		} catch(Exception e1) {
 			e1.printStackTrace();
 		} 
@@ -365,30 +367,25 @@ public class WFDBExecute {
 			debugPrintln("fmilliSecondPerSample:" + fmilliSecondPerSample);
 			
 			double[][] segmentData = new double[maxPoints][channels+1];
-			int iSampleToCopy =  segOffset; // index of the first sample to return data for, index is in samples not bytes.
-			int outSample=0;
 			double skipDecimals = skippedSamples-skippedSamplesInt;
 			double skipDecimalsCumulative = 0;
 			
-			for (int sample =  0; sample < counts; sample++){
-				if(sample==iSampleToCopy){ // add this sample the output data
-					segmentData[outSample][0] = fmilliSecondPerSample*sample; // time stamp in milliseconds
-					for(int ch = 0; ch < channels; ch++) {
-						segmentData[outSample][ch+1] = wfdb.getData()[ch][sample];
-					}
-					outSample++;
-					
-					skipDecimalsCumulative +=skipDecimals;
-					
-					iSampleToCopy = iSampleToCopy + 1 + skippedSamplesInt + (int)skipDecimalsCumulative;
-					
-					if(((int)skipDecimalsCumulative) > 0){
-						skipDecimalsCumulative = skipDecimalsCumulative-(int)skipDecimalsCumulative;
-					}
-					
-					if(outSample==maxPoints) break;
+			for (int sample =  0; sample < maxPoints;){
+				
+				segmentData[sample][0] = offsetMilliSeconds + (fmilliSecondPerSample*sample); // time stamp in milliseconds
+				for(int ch = 0; ch < channels; ch++) {
+					segmentData[sample][ch+1] = wfdb.getData()[ch][sample];
+				}
+				
+				skipDecimalsCumulative +=skipDecimals;
+				
+				sample = sample + 1 + skippedSamplesInt + (int)skipDecimalsCumulative;
+				
+				if(((int)skipDecimalsCumulative) > 0){
+					skipDecimalsCumulative = skipDecimalsCumulative-(int)skipDecimalsCumulative;
 				}
 			}
+			
 			visualizationData.setECGData(segmentData);
 			//*******************************************
 		} catch (Exception e) {
