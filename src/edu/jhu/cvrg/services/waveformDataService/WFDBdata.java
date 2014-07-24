@@ -120,8 +120,6 @@ public class WFDBdata {
 	 * @throws Exception
 	 */
 	private String[] copyDataFilesToAnalysis(Map<String, OMElement> params, DataServiceUtils util) throws Exception {
-		debugPrintln("Running copyDataFilesToAnalysis()");
-		
 		String[] tmpFileNames = null;
 		
 		if(util.getInputFileNames() != null){

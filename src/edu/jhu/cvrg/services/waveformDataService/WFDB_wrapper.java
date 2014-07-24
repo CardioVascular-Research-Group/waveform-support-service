@@ -30,14 +30,23 @@ public class WFDB_wrapper {
 	 * @param signalsRequested - Number of signals to read, starting with 1st signal.
 	 * @return samplesPerSignal
 	 */
-	public int WFDBtoArray(String recordNm, int signalsRequested, int samplesPerSignal, int signalCount) {
+	public int WFDBtoArray(String recordNm, int signalsRequested, int samplesPerSignal, int signalCount, int offsetMsec, int durationMsec) {
 		
 	    try{ // read data into the local array, count samplesPerSignal
 	    	
 	    	log.info("samplesPerSignal: " + samplesPerSignal + "  signalCount: " + signalCount);
-	    	data = new int[signalCount][samplesPerSignal];
 	    	
 			String command = "rdsamp -r " + filePath + recordNm + " -c -p -v -H";
+			
+			if(offsetMsec >= 0){
+				command += " -f " + (offsetMsec/1000.0);
+				
+				if(durationMsec > 0){
+					command += " -t " + ((offsetMsec+durationMsec)/1000.0);
+				}
+			}
+			
+			data = new int[signalCount][samplesPerSignal];
 			
 			Process process = Runtime.getRuntime().exec(command, new String[0], new File("/"));
 		    InputStream is = process.getInputStream();
@@ -53,7 +62,7 @@ public class WFDB_wrapper {
 	
 		    String[] aSigNames, aSample;
 		    int lineNum = 0;
-		    while ((line = stdInputBuffer.readLine()) != null) {
+		    while ((line = stdInputBuffer.readLine()) != null && (lineNum - 2 < samplesPerSignal)) {
 		    	if(lineNum==0){
 		    		aSigNames = line.split(",");
 		    		signalName = new String[signalCount];
@@ -63,8 +72,14 @@ public class WFDB_wrapper {
 		    	}else{
 		    		if (lineNum > 1){
 		    			aSample = line.split(",");
+		    			float fSamp;
 		    			for(int sig=1;sig<=signalCount;sig++){ // zeroth column is time, not a signal
-		    				data[sig-1][lineNum-2] = (int)(Float.parseFloat(aSample[sig])*1000);// convert float millivolts to integer microvolts.
+		    				try{ // Check if value is a not a number, e.g. "-" or "na", substitute zero so rdsamp won't break; Mike Shipway (7/21/2014)
+		    					fSamp  = Float.parseFloat(aSample[sig]); // assumes unit is float millivolts.
+		    				}catch(NumberFormatException nfe){
+		    					fSamp = 0;
+		    				}
+		    				data[sig-1][lineNum-2] = (int)(fSamp*1000);// convert float millivolts to integer microvolts.
 		    			}			    	  
 		    		}		    	  
 		    	}
